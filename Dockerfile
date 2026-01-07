@@ -12,19 +12,7 @@ WORKDIR /app
 COPY --from=builder /app/whiteboard-app/target/whiteboard-app-*.jar ./app.jar
 RUN ls -la /app/app.jar
 
-# Create entrypoint script before creating non-root user
-RUN cat > /app/entrypoint.sh << 'EOF'
-#!/bin/sh
-exec java \
-  -Xmx512m \
-  -Xms256m \
-  -Dserver.port=${PORT:-8081} \
-  -jar /app/app.jar \
-  --spring.profiles.active=prod
-EOF
-RUN chmod +x /app/entrypoint.sh
-
-# Create non-root user for security and fix permissions
+# Create non-root user for security
 RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
     chown -R appuser:appgroup /app
 
@@ -35,4 +23,4 @@ HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
   CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8081}/actuator/health || exit 1
 
 EXPOSE ${PORT:-8081}
-ENTRYPOINT ["/app/entrypoint.sh"]
+CMD ["java", "-Xmx512m", "-Xms256m", "-Dserver.port=8081", "-jar", "/app/app.jar", "--spring.profiles.active=prod"]
