@@ -12,15 +12,21 @@ WORKDIR /app
 COPY --from=builder /app/whiteboard-app/target/whiteboard-app-*.jar ./app.jar
 RUN ls -la /app/app.jar
 
-# Create non-root user for security
-RUN addgroup -S appgroup && adduser -S appuser -G appgroup
+# Create entrypoint script before creating non-root user
+RUN cat > /app/entrypoint.sh << 'EOF'
+#!/bin/sh
+exec java \
+  -Xmx512m \
+  -Xms256m \
+  -Dserver.port=${PORT:-8081} \
+  -jar /app/app.jar \
+  --spring.profiles.active=prod
+EOF
+RUN chmod +x /app/entrypoint.sh
 
-# Create entrypoint script as root before switching user
-RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
-    echo 'set -- ${@}' >> /app/entrypoint.sh && \
-    echo 'exec java -Xmx512m -Xms256m -Dserver.port=${PORT:-8081} -jar /app/app.jar --spring.profiles.active=prod' >> /app/entrypoint.sh && \
-    chmod +x /app/entrypoint.sh && \
-    chown appuser:appgroup /app/entrypoint.sh
+# Create non-root user for security and fix permissions
+RUN addgroup -S appgroup && adduser -S appuser -G appgroup && \
+    chown -R appuser:appgroup /app
 
 USER appuser
 
