@@ -16,7 +16,7 @@ USER appuser
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/actuator/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-8081}/actuator/health || exit 1
 
-EXPOSE 8081
-ENTRYPOINT ["java", "-Xmx512m", "-Xms256m", "-jar", "app.jar", "--spring.profiles.active=prod"]
+EXPOSE ${PORT:-8081}
+ENTRYPOINT ["sh", "-c", "java -Xmx512m -Xms256m -Dserver.port=${PORT:-8081} -jar app.jar --spring.profiles.active=prod"]
