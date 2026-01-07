@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 // CHANGED: We import Client, not 'over'
-import { Client } from '@stomp/stompjs'; 
+import { Client } from '@stomp/stompjs';
 import SockJS from 'sockjs-client/dist/sockjs';
 import './WhiteboardPage.css';
 import { FaSun, FaMoon } from 'react-icons/fa';
@@ -21,12 +21,12 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
   const [isConnected, setIsConnected] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
   const [isChatMinimized, setIsChatMinimized] = useState(false);
-  
+
   // Debug: Monitor chat messages changes
   useEffect(() => {
     console.log('chatMessages state changed, length:', chatMessages.length);
   }, [chatMessages]);
-  
+
   // Channel management state
   const [channels, setChannels] = useState([
     { name: 'general', logo: '💬', type: 'public' },
@@ -78,7 +78,7 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
 
     // Create a new Client instance
     const sockJsUrl = process.env.REACT_APP_WS_URL || '/ws';
-    
+
     stompClient.current = new Client({
       webSocketFactory: () => new SockJS(sockJsUrl),
       reconnectDelay: 5000,
@@ -136,7 +136,7 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
       console.log('Subscribed to chat topic:', chatSub.id);
 
       // Load historical data AFTER subscribing
-      loadHistory().catch(err => 
+      loadHistory().catch(err =>
         console.error('Failed to load history, continuing anyway:', err)
       );
     } catch (error) {
@@ -148,10 +148,11 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
   const loadHistory = async () => {
     try {
       console.log(`Fetching history for session: ${sessionName}, channel: ${currentChannel}`);
-      
+
       // Fetch shapes (drawing history)
+      const baseUrl = process.env.REACT_APP_API_URL || '';
       const shapesResponse = await fetch(
-        `/api/sessions/${sessionName}/channels/${currentChannel}/shapes`
+        `${baseUrl}/api/sessions/${sessionName}/channels/${currentChannel}/shapes`
       );
       if (shapesResponse.ok) {
         const shapes = await shapesResponse.json();
@@ -177,7 +178,7 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
 
       // Fetch chat messages history
       const chatResponse = await fetch(
-        `/api/sessions/${sessionName}/channels/${currentChannel}/chat`
+        `${baseUrl}/api/sessions/${sessionName}/channels/${currentChannel}/chat`
       );
       if (chatResponse.ok) {
         const messages = await chatResponse.json();
@@ -275,12 +276,12 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
       // Immediate local clear so user sees instant feedback
       setDrawEvents([]);
     }
-    
+
     if (!stompClient.current || !stompClient.current.connected) {
       console.error('Cannot send draw event: STOMP client not connected.');
       return;
     }
-    
+
     try {
       stompClient.current.publish({
         destination: `/app/draw/${sessionName}/${currentChannel}`,
@@ -306,38 +307,38 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
     const hasAttachment = !!payload.attachmentUrl;
 
     if (!trimmed && !hasAttachment) return;
-    
+
     if (!stompClient.current || !stompClient.current.connected) {
       console.error('Cannot send chat message: STOMP client not connected.');
       // Still add to local state for better UX
-      setChatMessages(prev => [...prev, { 
-        senderName: userName, 
+      setChatMessages(prev => [...prev, {
+        senderName: userName,
         content: trimmed,
         messageType: payload.messageType,
         attachmentUrl: payload.attachmentUrl,
         attachmentName: payload.attachmentName,
         attachmentContentType: payload.attachmentContentType,
         attachmentSize: payload.attachmentSize,
-        timestamp: new Date().toISOString(), 
+        timestamp: new Date().toISOString(),
         optimistic: true,
-        error: true 
+        error: true
       }]);
       return;
     }
-    
+
     // Optimistic local update for real-time feel
-    setChatMessages(prev => [...prev, { 
-      senderName: userName, 
+    setChatMessages(prev => [...prev, {
+      senderName: userName,
       content: trimmed,
       messageType: payload.messageType,
       attachmentUrl: payload.attachmentUrl,
       attachmentName: payload.attachmentName,
       attachmentContentType: payload.attachmentContentType,
       attachmentSize: payload.attachmentSize,
-      timestamp: new Date().toISOString(), 
-      optimistic: true 
+      timestamp: new Date().toISOString(),
+      optimistic: true
     }]);
-    
+
     try {
       const chatPayload = {
         senderName: userName,
@@ -406,8 +407,8 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
                 {isConnected ? 'Connected' : 'Disconnected'}
               </span>
             </div>
-            <button 
-              className="dark-mode-toggle" 
+            <button
+              className="dark-mode-toggle"
               onClick={() => setDarkMode(!darkMode)}
               title="Toggle Dark Mode"
             >
@@ -423,8 +424,8 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
         <div className={`content-area ${isChatMinimized ? 'chat-hidden' : ''}`}>
           <div className={`whiteboard-area ${isChatMinimized ? 'expanded' : ''}`}>
             {/* Render the Canvas component */}
-            <Canvas 
-              drawEvents={drawEvents} 
+            <Canvas
+              drawEvents={drawEvents}
               sendDrawEvent={sendDrawEvent}
               previewShape={previewShape}
               addLocalDrawEvent={addLocalDrawEvent}
@@ -432,11 +433,11 @@ function WhiteboardPage({ session, onLogout, onSessionUpdate }) {
               channelName={currentChannel}
             />
           </div>
-          
+
           <div className={`chat-column ${isChatMinimized ? 'collapsed' : ''}`}>
             {/* Render the Chat component */}
-            <Chat 
-              chatMessages={chatMessages} 
+            <Chat
+              chatMessages={chatMessages}
               sendChatMessage={sendChatMessage}
               userName={userName}
               channelName={currentChannel}

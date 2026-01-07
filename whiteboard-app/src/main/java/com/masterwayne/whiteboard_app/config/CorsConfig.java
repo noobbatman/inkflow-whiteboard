@@ -8,18 +8,13 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CorsConfig implements WebMvcConfigurer {
 
     @Override
-    public void addCorsMappings(CorsRegistry registry) {
+    public void addCorsMappings(@org.springframework.lang.NonNull CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(
-                    "http://localhost:3000",
-                    "http://localhost:3001",
-                    "http://localhost:3002",
-                    "http://localhost:8081",
-                    "http://127.0.0.1:3000",
-                    "http://127.0.0.1:3001",
-                    "http://127.0.0.1:3002",
-                    "http://127.0.0.1:8081"
-                )
+                .allowedOriginPatterns(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*",
+                        "https://*.vercel.app",
+                        "https://*.railway.app")
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("*")
                 .allowCredentials(true)
@@ -27,16 +22,11 @@ public class CorsConfig implements WebMvcConfigurer {
 
         // Allow CORS for WebSocket endpoint
         registry.addMapping("/ws/**")
-                .allowedOrigins(
-                    "http://localhost:3000",
-                    "http://localhost:3001",
-                    "http://localhost:3002",
-                    "http://localhost:8081",
-                    "http://127.0.0.1:3000",
-                    "http://127.0.0.1:3001",
-                    "http://127.0.0.1:3002",
-                    "http://127.0.0.1:8081"
-                )
+                .allowedOriginPatterns(
+                        "http://localhost:*",
+                        "http://127.0.0.1:*",
+                        "https://*.vercel.app",
+                        "https://*.railway.app")
                 .allowedMethods("GET", "POST")
                 .allowedHeaders("*")
                 .allowCredentials(true)

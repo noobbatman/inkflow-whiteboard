@@ -16,7 +16,8 @@ function LoginPage({ onLogin }) {
       return;
     }
 
-    const url = isJoining ? '/api/sessions/join' : '/api/sessions/create';
+    const baseUrl = process.env.REACT_APP_API_URL || '';
+    const url = isJoining ? `${baseUrl}/api/sessions/join` : `${baseUrl}/api/sessions/create`;
     const body = isJoining
       ? { sessionName, userName }
       : { sessionName, managerName: userName };

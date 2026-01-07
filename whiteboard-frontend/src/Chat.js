@@ -25,12 +25,12 @@ function Chat({ chatMessages, sendChatMessage, userName, channelName, isMinimize
   useEffect(() => {
     // Scroll immediately
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    
+
     // Also scroll after a short delay to handle image loading
     const timer = setTimeout(() => {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
     }, 100);
-    
+
     return () => clearTimeout(timer);
   }, [chatMessages]);
 
@@ -89,7 +89,8 @@ function Chat({ chatMessages, sendChatMessage, userName, channelName, isMinimize
       const form = new FormData();
       form.append('file', file);
 
-      const res = await fetch('/api/uploads', {
+      const baseUrl = process.env.REACT_APP_API_URL || '';
+      const res = await fetch(`${baseUrl}/api/uploads`, {
         method: 'POST',
         body: form,
       });
@@ -121,12 +122,12 @@ function Chat({ chatMessages, sendChatMessage, userName, channelName, isMinimize
   const shouldShowHeader = (currentMsg, prevMsg, index) => {
     if (index === 0) return true;
     if (currentMsg.senderName !== prevMsg.senderName) return true;
-    
+
     // Show header if messages are more than 5 minutes apart
     const currentTime = currentMsg.timestamp ? new Date(currentMsg.timestamp).getTime() : 0;
     const prevTime = prevMsg.timestamp ? new Date(prevMsg.timestamp).getTime() : 0;
     const timeDiff = currentTime - prevTime;
-    
+
     return timeDiff > 300000; // 5 minutes
   };
 
@@ -178,54 +179,54 @@ function Chat({ chatMessages, sendChatMessage, userName, channelName, isMinimize
       </div>
       <div className={`chat-body ${isMinimized ? 'collapsed' : ''}`}>
         <div className="message-list">
-        {chatMessages.length === 0 && (
-          <div className="empty-chat">
-            <div className="empty-icon">#</div>
-            <h3>Welcome to #{channelName || 'channel'}!</h3>
-            <p>This is the beginning of the #{channelName || 'channel'} channel.</p>
-          </div>
-        )}
-        {chatMessages.map((msg, index) => {
-          const showHeader = shouldShowHeader(msg, chatMessages[index - 1], index);
-          const isOwn = !!userName && msg.senderName === userName;
-          const dt = msg.timestamp ? new Date(msg.timestamp) : new Date();
-          const timeLabel = dt.toLocaleString([], {
-            hour: '2-digit', 
-            minute: '2-digit'
-          });
-          const dateLabel = dt.toLocaleDateString([], {
-            month: 'short',
-            day: 'numeric',
-            year: 'numeric'
-          });
+          {chatMessages.length === 0 && (
+            <div className="empty-chat">
+              <div className="empty-icon">#</div>
+              <h3>Welcome to #{channelName || 'channel'}!</h3>
+              <p>This is the beginning of the #{channelName || 'channel'} channel.</p>
+            </div>
+          )}
+          {chatMessages.map((msg, index) => {
+            const showHeader = shouldShowHeader(msg, chatMessages[index - 1], index);
+            const isOwn = !!userName && msg.senderName === userName;
+            const dt = msg.timestamp ? new Date(msg.timestamp) : new Date();
+            const timeLabel = dt.toLocaleString([], {
+              hour: '2-digit',
+              minute: '2-digit'
+            });
+            const dateLabel = dt.toLocaleDateString([], {
+              month: 'short',
+              day: 'numeric',
+              year: 'numeric'
+            });
 
-          const groupClass = `chat-message-group${showHeader ? '' : ' compact'}`;
+            const groupClass = `chat-message-group${showHeader ? '' : ' compact'}`;
 
-          return (
-            <div 
-              key={index} 
-              className={`chat-message-wrapper${isOwn ? ' own' : ''}${msg.optimistic ? ' optimistic' : ''}${showHeader ? ' show-header' : ''}`}
-            >
-              <div className={groupClass}>
-                {!isOwn && showHeader && (
-                  <div className="message-avatar">
-                    {(msg.senderName || '?').charAt(0).toUpperCase()}
-                  </div>
-                )}
-                <div className="message-content-wrapper">
-                  <div className={`message-header${isOwn ? ' own' : ''}`}>
-                    <span className="sender-name">{msg.senderName || (isOwn ? userName : 'User')}</span>
-                    <span className="timestamp">{dateLabel} at {timeLabel}</span>
-                  </div>
-                  <div className={`message-bubble${isOwn ? ' own' : ''}`}>
-                    {msg.content ? <div className="message-content">{msg.content}</div> : null}
-                    {renderAttachment(msg)}
+            return (
+              <div
+                key={index}
+                className={`chat-message-wrapper${isOwn ? ' own' : ''}${msg.optimistic ? ' optimistic' : ''}${showHeader ? ' show-header' : ''}`}
+              >
+                <div className={groupClass}>
+                  {!isOwn && showHeader && (
+                    <div className="message-avatar">
+                      {(msg.senderName || '?').charAt(0).toUpperCase()}
+                    </div>
+                  )}
+                  <div className="message-content-wrapper">
+                    <div className={`message-header${isOwn ? ' own' : ''}`}>
+                      <span className="sender-name">{msg.senderName || (isOwn ? userName : 'User')}</span>
+                      <span className="timestamp">{dateLabel} at {timeLabel}</span>
+                    </div>
+                    <div className={`message-bubble${isOwn ? ' own' : ''}`}>
+                      {msg.content ? <div className="message-content">{msg.content}</div> : null}
+                      {renderAttachment(msg)}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          );
-        })}
+            );
+          })}
           <div ref={messagesEndRef} />
         </div>
         <form className="chat-input-form" onSubmit={handleSend}>

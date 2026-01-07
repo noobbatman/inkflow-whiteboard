@@ -20,17 +20,20 @@ import java.util.Map;
 import java.util.concurrent.*;
 
 /**
- * PersistenceWorker manages asynchronous persistence of drawing and chat events using a background thread.
+ * PersistenceWorker manages asynchronous persistence of drawing and chat events
+ * using a background thread.
  * 
  * Design:
- * - Uses a BlockingQueue to decouple WebSocket event handlers from persistence logic
+ * - Uses a BlockingQueue to decouple WebSocket event handlers from persistence
+ * logic
  * - Single-threaded executor ensures serialized DB writes (no race conditions)
  * - On DB write failure, automatically falls back to file-based storage
  * - Graceful shutdown with queue draining on application termination
  * 
  * Thread safety:
  * - BlockingQueue is thread-safe for producer/consumer coordination
- * - All repository operations executed on single background thread (no concurrent DB access from this worker)
+ * - All repository operations executed on single background thread (no
+ * concurrent DB access from this worker)
  */
 @Component
 public class PersistenceWorker {
@@ -48,8 +51,8 @@ public class PersistenceWorker {
 
     @Autowired
     public PersistenceWorker(WhiteboardSessionRepository sessionRepository,
-                             FallbackStorage fallbackStorage,
-                             PlatformTransactionManager transactionManager) {
+            FallbackStorage fallbackStorage,
+            @org.springframework.lang.NonNull PlatformTransactionManager transactionManager) {
         this.sessionRepository = sessionRepository;
         this.fallbackStorage = fallbackStorage;
         this.transactionTemplate = new TransactionTemplate(transactionManager);
@@ -76,7 +79,8 @@ public class PersistenceWorker {
     }
 
     /**
-     * Main consumer loop: continuously reads tasks from queue and executes persistence.
+     * Main consumer loop: continuously reads tasks from queue and executes
+     * persistence.
      * Runs on the background thread.
      */
     private void consumerLoop() {
@@ -156,7 +160,8 @@ public class PersistenceWorker {
         for (Map.Entry<String, List<PersistenceTask>> entry : tasksBySession.entrySet()) {
             String sessionName = entry.getKey();
             var session = sessionRepository.findBySessionName(sessionName)
-                    .orElseThrow(() -> new PersistenceException("Session '" + sessionName + "' not found for persisting batch"));
+                    .orElseThrow(() -> new PersistenceException(
+                            "Session '" + sessionName + "' not found for persisting batch"));
 
             Map<String, Channel> channelCache = buildChannelCache(session);
             Map<String, List<DrawPayload>> drawEventsByChannel = new LinkedHashMap<>();
@@ -187,7 +192,8 @@ public class PersistenceWorker {
                 channel.getChatMessages().addAll(chatEntry.getValue());
             }
 
-            sessionRepository.save(session);
+            @SuppressWarnings({ "null", "unused" })
+            com.masterwayne.whiteboard_app.model.WhiteboardSession savedSession = sessionRepository.save(session);
         }
     }
 
@@ -202,8 +208,8 @@ public class PersistenceWorker {
     }
 
     private Channel resolveChannel(String channelName,
-                                   Map<String, Channel> channelCache,
-                                   com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws PersistenceException {
+            Map<String, Channel> channelCache,
+            com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws PersistenceException {
         Channel channel = channelCache.get(channelName);
         if (channel == null) {
             throw new PersistenceException("Channel '" + channelName + "' not found in session");
@@ -217,7 +223,8 @@ public class PersistenceWorker {
      */
     public boolean submitDrawEvent(String sessionName, String channelName, DrawPayload payload) {
         if (!running) {
-            logger.warn("PersistenceWorker is not running. Event discarded: session={}, channel={}", sessionName, channelName);
+            logger.warn("PersistenceWorker is not running. Event discarded: session={}, channel={}", sessionName,
+                    channelName);
             return false;
         }
 
@@ -225,7 +232,8 @@ public class PersistenceWorker {
         boolean submitted = taskQueue.offer(task);
 
         if (!submitted) {
-            logger.error("PersistenceWorker queue full. Event discarded: session={}, channel={}", sessionName, channelName);
+            logger.error("PersistenceWorker queue full. Event discarded: session={}, channel={}", sessionName,
+                    channelName);
         }
 
         return submitted;
@@ -237,7 +245,8 @@ public class PersistenceWorker {
      */
     public boolean submitChatMessage(String sessionName, String channelName, ChatMessage message) {
         if (!running) {
-            logger.warn("PersistenceWorker is not running. Message discarded: session={}, channel={}", sessionName, channelName);
+            logger.warn("PersistenceWorker is not running. Message discarded: session={}, channel={}", sessionName,
+                    channelName);
             return false;
         }
 
@@ -245,14 +254,16 @@ public class PersistenceWorker {
         boolean submitted = taskQueue.offer(task);
 
         if (!submitted) {
-            logger.error("PersistenceWorker queue full. Message discarded: session={}, channel={}", sessionName, channelName);
+            logger.error("PersistenceWorker queue full. Message discarded: session={}, channel={}", sessionName,
+                    channelName);
         }
 
         return submitted;
     }
 
     /**
-     * Gracefully shuts down the worker thread, draining remaining tasks before terminating.
+     * Gracefully shuts down the worker thread, draining remaining tasks before
+     * terminating.
      * Called via @PreDestroy.
      */
     public void shutdown() {
@@ -329,7 +340,7 @@ public class PersistenceWorker {
         /**
          * Executes the persistence operation (DB write).
          */
-    public abstract void apply(com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws Exception;
+        public abstract void apply(com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws Exception;
 
         /**
          * Writes the event to fallback storage if DB write failed.
@@ -376,13 +387,13 @@ public class PersistenceWorker {
         }
 
         @Override
-    public void apply(com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws Exception {
-        var channel = session.getChannels().stream()
-            .filter(c -> c.getChannelName().equals(channelName))
-            .findFirst()
-            .orElseThrow(() -> new PersistenceException("Channel '" + channelName + "' not found in session"));
+        public void apply(com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws Exception {
+            var channel = session.getChannels().stream()
+                    .filter(c -> c.getChannelName().equals(channelName))
+                    .findFirst()
+                    .orElseThrow(() -> new PersistenceException("Channel '" + channelName + "' not found in session"));
 
-        channel.getShapes().add(payload);
+            channel.getShapes().add(payload);
         }
 
         @Override
@@ -392,7 +403,8 @@ public class PersistenceWorker {
 
         @Override
         public String getDescription() {
-            return String.format("DrawEvent{session='%s', channel='%s', type='%s'}", sessionName, channelName, payload.getType());
+            return String.format("DrawEvent{session='%s', channel='%s', type='%s'}", sessionName, channelName,
+                    payload.getType());
         }
     }
 
@@ -408,13 +420,13 @@ public class PersistenceWorker {
         }
 
         @Override
-    public void apply(com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws Exception {
-        var channel = session.getChannels().stream()
-            .filter(c -> c.getChannelName().equals(channelName))
-            .findFirst()
-            .orElseThrow(() -> new PersistenceException("Channel '" + channelName + "' not found in session"));
+        public void apply(com.masterwayne.whiteboard_app.model.WhiteboardSession session) throws Exception {
+            var channel = session.getChannels().stream()
+                    .filter(c -> c.getChannelName().equals(channelName))
+                    .findFirst()
+                    .orElseThrow(() -> new PersistenceException("Channel '" + channelName + "' not found in session"));
 
-        channel.getChatMessages().add(message);
+            channel.getChatMessages().add(message);
         }
 
         @Override
@@ -424,7 +436,8 @@ public class PersistenceWorker {
 
         @Override
         public String getDescription() {
-            return String.format("ChatMessage{session='%s', channel='%s', sender='%s'}", sessionName, channelName, message.getSenderName());
+            return String.format("ChatMessage{session='%s', channel='%s', sender='%s'}", sessionName, channelName,
+                    message.getSenderName());
         }
     }
 }

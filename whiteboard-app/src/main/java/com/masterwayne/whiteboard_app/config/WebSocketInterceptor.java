@@ -11,18 +11,22 @@ public class WebSocketInterceptor implements WebSocketHandlerDecoratorFactory {
     private static final Logger logger = LoggerFactory.getLogger(WebSocketInterceptor.class);
 
     @Override
-    public WebSocketHandler decorate(WebSocketHandler handler) {
+    @org.springframework.lang.NonNull
+    public WebSocketHandler decorate(@org.springframework.lang.NonNull WebSocketHandler handler) {
         return new WebSocketHandlerDecorator(handler) {
             @Override
-            public void afterConnectionEstablished(WebSocketSession session) throws Exception {
+            public void afterConnectionEstablished(@org.springframework.lang.NonNull WebSocketSession session)
+                    throws Exception {
                 logger.info("WebSocket connection established: {} - {}", session.getId(), session.getRemoteAddress());
                 super.afterConnectionEstablished(session);
             }
 
             @Override
-            public void afterConnectionClosed(WebSocketSession session, org.springframework.web.socket.CloseStatus closeStatus) throws Exception {
-                logger.info("WebSocket connection closed: {} - Code: {} - Reason: {}", 
-                    session.getId(), closeStatus.getCode(), closeStatus.getReason());
+            public void afterConnectionClosed(@org.springframework.lang.NonNull WebSocketSession session,
+                    @org.springframework.lang.NonNull org.springframework.web.socket.CloseStatus closeStatus)
+                    throws Exception {
+                logger.info("WebSocket connection closed: {} - Code: {} - Reason: {}",
+                        session.getId(), closeStatus.getCode(), closeStatus.getReason());
                 super.afterConnectionClosed(session, closeStatus);
             }
         };

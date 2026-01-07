@@ -7,7 +7,7 @@ function SessionForm({ onLogin }) {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const mode = searchParams.get('mode') || 'create'; // 'create' or 'join'
-  
+
   const [sessionName, setSessionName] = useState('');
   const [userName, setUserName] = useState('');
   const [error, setError] = useState('');
@@ -24,7 +24,8 @@ function SessionForm({ onLogin }) {
 
     setLoading(true);
 
-    const url = mode === 'join' ? '/api/sessions/join' : '/api/sessions/create';
+    const baseUrl = process.env.REACT_APP_API_URL || '';
+    const url = mode === 'join' ? `${baseUrl}/api/sessions/join` : `${baseUrl}/api/sessions/create`;
     const body = mode === 'join'
       ? { sessionName: sessionName.trim(), userName: userName.trim() }
       : { sessionName: sessionName.trim(), managerName: userName.trim() };
@@ -110,7 +111,7 @@ function SessionForm({ onLogin }) {
               {mode === 'create' ? 'Create New Session' : 'Join Session'}
             </h2>
             <p className="form-subtitle">
-              {mode === 'create' 
+              {mode === 'create'
                 ? 'Start a new collaborative whiteboard session'
                 : 'Enter session details to join your team'}
             </p>
