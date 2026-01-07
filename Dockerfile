@@ -17,6 +17,7 @@ RUN addgroup -S appgroup && adduser -S appuser -G appgroup
 
 # Create entrypoint script as root before switching user
 RUN echo '#!/bin/sh' > /app/entrypoint.sh && \
+    echo 'set -- ${@}' >> /app/entrypoint.sh && \
     echo 'exec java -Xmx512m -Xms256m -Dserver.port=${PORT:-8081} -jar /app/app.jar --spring.profiles.active=prod' >> /app/entrypoint.sh && \
     chmod +x /app/entrypoint.sh && \
     chown appuser:appgroup /app/entrypoint.sh
